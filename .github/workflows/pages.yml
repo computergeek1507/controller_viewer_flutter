@@ -31,7 +31,7 @@ jobs:
           cache: true
       - run: flutter pub get
       # base-href must match the project-page path: /<repo>/
-      - run: flutter build web --release --base-href "/fpp_view_flutter/"
+      - run: flutter build web --release --base-href "/controller_viewer_flutter/"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web

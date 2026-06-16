@@ -4,7 +4,7 @@ A cross-platform Flutter app to discover and control Controllers devices on the 
 
 Runs on Windows, Android, iOS, macOS, and Linux.
 
-**Try it in your browser:** [computergeek1507.github.io/fpp_view_flutter](https://computergeek1507.github.io/controller_viewer_flutter/)
+**Try it in your browser:** [computergeek1507.github.io/controller_viewer_flutter](https://computergeek1507.github.io/controller_viewer_flutter/)
 
 > ⚠️ **The web build has major limitations** — for full functionality, use the native desktop or mobile build instead.
 >
