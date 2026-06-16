@@ -1,10 +1,10 @@
 # Controller Viewer
 
-A cross-platform Flutter app to discover and control [Falcon Player (FPP)](https://github.com/FalconChristmas/fpp) devices on the local network.
+A cross-platform Flutter app to discover and control Controllers devices on the local network.
 
 Runs on Windows, Android, iOS, macOS, and Linux.
 
-**Try it in your browser:** [computergeek1507.github.io/fpp_view_flutter](https://computergeek1507.github.io/fpp_view_flutter/)
+**Try it in your browser:** [computergeek1507.github.io/fpp_view_flutter](https://computergeek1507.github.io/controller_viewer_flutter/)
 
 > ⚠️ **The web build has major limitations** — for full functionality, use the native desktop or mobile build instead.
 >
