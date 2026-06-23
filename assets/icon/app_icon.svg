@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="board" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#13316e"/>
+      <stop offset="1" stop-color="#0A1730"/>
+    </linearGradient>
+    <linearGradient id="chip" x1="362" y1="362" x2="662" y2="662" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1a2747"/>
+      <stop offset="1" stop-color="#0a1024"/>
+    </linearGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.45" r="0.7">
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.28"/>
+    </radialGradient>
+    <filter id="ledglow" x="-120%" y="-120%" width="340%" height="340%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <!-- Board background -->
+  <rect x="0" y="0" width="1024" height="1024" rx="200" fill="url(#board)"/>
+  <!-- silkscreen border -->
+  <rect x="70" y="70" width="884" height="884" rx="150" fill="none"
+        stroke="#3a5da8" stroke-opacity="0.25" stroke-width="4"/>
+
+  <!-- ===== Copper traces (drawn under chip & pads) ===== -->
+  <g fill="none" stroke="#33C7BC" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#15706b" stroke-width="22">
+      <!-- underlay shadow for depth: cardinal -->
+      <polyline points="512,512 512,150"/>
+      <polyline points="512,512 874,512"/>
+      <polyline points="512,512 512,874"/>
+      <polyline points="512,512 150,512"/>
+      <!-- diagonal -->
+      <polyline points="612,362 612,300 762,150"/>
+      <polyline points="412,362 412,300 262,150"/>
+      <polyline points="612,662 612,724 762,874"/>
+      <polyline points="412,662 412,724 262,874"/>
+    </g>
+    <!-- bright copper top -->
+    <polyline points="512,512 512,150"/>
+    <polyline points="512,512 874,512"/>
+    <polyline points="512,512 512,874"/>
+    <polyline points="512,512 150,512"/>
+    <polyline points="612,362 612,300 762,150"/>
+    <polyline points="412,362 412,300 262,150"/>
+    <polyline points="612,662 612,724 762,874"/>
+    <polyline points="412,662 412,724 262,874"/>
+  </g>
+
+  <!-- Vias (gold rings) at trace bends -->
+  <g>
+    <g fill="#0A1730" stroke="#E2B14C" stroke-width="7">
+      <circle cx="612" cy="300" r="14"/>
+      <circle cx="412" cy="300" r="14"/>
+      <circle cx="612" cy="724" r="14"/>
+      <circle cx="412" cy="724" r="14"/>
+    </g>
+  </g>
+
+  <!-- ===== LED pads (glowing) ===== -->
+  <g>
+    <!-- N green -->
+    <circle cx="512" cy="150" r="40" fill="#43A047" filter="url(#ledglow)" opacity="0.6"/>
+    <circle cx="512" cy="150" r="34" fill="#43A047"/><circle cx="500" cy="138" r="9" fill="#fff" opacity="0.85"/>
+    <!-- E amber -->
+    <circle cx="874" cy="512" r="40" fill="#FDB827" filter="url(#ledglow)" opacity="0.6"/>
+    <circle cx="874" cy="512" r="34" fill="#FDB827"/><circle cx="862" cy="500" r="9" fill="#fff" opacity="0.85"/>
+    <!-- S blue -->
+    <circle cx="512" cy="874" r="40" fill="#1E88E5" filter="url(#ledglow)" opacity="0.6"/>
+    <circle cx="512" cy="874" r="34" fill="#1E88E5"/><circle cx="500" cy="862" r="9" fill="#fff" opacity="0.85"/>
+    <!-- W red -->
+    <circle cx="150" cy="512" r="40" fill="#E53935" filter="url(#ledglow)" opacity="0.6"/>
+    <circle cx="150" cy="512" r="34" fill="#E53935"/><circle cx="138" cy="500" r="9" fill="#fff" opacity="0.85"/>
+    <!-- NE blue -->
+    <circle cx="762" cy="150" r="40" fill="#1E88E5" filter="url(#ledglow)" opacity="0.6"/>
+    <circle cx="762" cy="150" r="34" fill="#1E88E5"/><circle cx="750" cy="138" r="9" fill="#fff" opacity="0.85"/>
+    <!-- NW red -->
+    <circle cx="262" cy="150" r="40" fill="#E53935" filter="url(#ledglow)" opacity="0.6"/>
+    <circle cx="262" cy="150" r="34" fill="#E53935"/><circle cx="250" cy="138" r="9" fill="#fff" opacity="0.85"/>
+    <!-- SE green -->
+    <circle cx="762" cy="874" r="40" fill="#43A047" filter="url(#ledglow)" opacity="0.6"/>
+    <circle cx="762" cy="874" r="34" fill="#43A047"/><circle cx="750" cy="862" r="9" fill="#fff" opacity="0.85"/>
+    <!-- SW amber -->
+    <circle cx="262" cy="874" r="40" fill="#FDB827" filter="url(#ledglow)" opacity="0.6"/>
+    <circle cx="262" cy="874" r="34" fill="#FDB827"/><circle cx="250" cy="862" r="9" fill="#fff" opacity="0.85"/>
+  </g>
+
+  <!-- ===== Central IC chip ===== -->
+  <g>
+    <!-- gold pins (4 per side) -->
+    <g fill="#D9A93F">
+      <!-- top -->
+      <rect x="402" y="338" width="20" height="36" rx="4"/>
+      <rect x="462" y="338" width="20" height="36" rx="4"/>
+      <rect x="542" y="338" width="20" height="36" rx="4"/>
+      <rect x="602" y="338" width="20" height="36" rx="4"/>
+      <!-- bottom -->
+      <rect x="402" y="650" width="20" height="36" rx="4"/>
+      <rect x="462" y="650" width="20" height="36" rx="4"/>
+      <rect x="542" y="650" width="20" height="36" rx="4"/>
+      <rect x="602" y="650" width="20" height="36" rx="4"/>
+      <!-- left -->
+      <rect x="338" y="402" width="36" height="20" rx="4"/>
+      <rect x="338" y="462" width="36" height="20" rx="4"/>
+      <rect x="338" y="542" width="36" height="20" rx="4"/>
+      <rect x="338" y="602" width="36" height="20" rx="4"/>
+      <!-- right -->
+      <rect x="650" y="402" width="36" height="20" rx="4"/>
+      <rect x="650" y="462" width="36" height="20" rx="4"/>
+      <rect x="650" y="542" width="36" height="20" rx="4"/>
+      <rect x="650" y="602" width="36" height="20" rx="4"/>
+    </g>
+    <!-- chip body -->
+    <rect x="362" y="362" width="300" height="300" rx="40" fill="url(#chip)"
+          stroke="#33507f" stroke-width="4"/>
+    <!-- pin-1 marker -->
+    <circle cx="402" cy="402" r="13" fill="none" stroke="#5e7bb0" stroke-width="5"/>
+    <!-- chip etched monogram: a small pixel grid echoing the app -->
+    <g fill="#3FC9C0">
+      <circle cx="470" cy="470" r="13"/><circle cx="512" cy="470" r="13"/><circle cx="554" cy="470" r="13"/>
+      <circle cx="470" cy="512" r="13"/><circle cx="512" cy="512" r="13" fill="#5fe0d6"/><circle cx="554" cy="512" r="13"/>
+      <circle cx="470" cy="554" r="13"/><circle cx="512" cy="554" r="13"/><circle cx="554" cy="554" r="13"/>
+    </g>
+  </g>
+
+  <!-- corner vignette for depth -->
+  <rect x="0" y="0" width="1024" height="1024" rx="200" fill="url(#vig)"/>
+</svg>

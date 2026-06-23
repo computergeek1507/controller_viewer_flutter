@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'screenshot_mode.dart';
 import 'services/device_manager.dart';
 import 'ui/device_list_page.dart';
 
@@ -21,7 +22,12 @@ class _FppControlAppState extends State<FppControlApp> {
   void initState() {
     super.initState();
     _manager = DeviceManager();
-    _manager.init();
+    // Store-screenshot/demo build: seed sample devices instead of scanning.
+    if (kScreenshotMode) {
+      _manager.loadDemoDevices();
+    } else {
+      _manager.init();
+    }
   }
 
   @override

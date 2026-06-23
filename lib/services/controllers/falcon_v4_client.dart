@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 
 import '../../models/controller_vendor.dart';
+import '../../screenshot_mode.dart';
 import 'controller_client.dart';
 
 /// Falcon V4/V5: single `POST /api` JSON endpoint with a {T,M,B,E,I,P} envelope.
@@ -92,6 +93,19 @@ class FalconV4Client extends ControllerClient {
 
   @override
   Future<List<ControllerOutput>> fetchOutputs() async {
+    // Screenshot/demo build: serve a representative port layout.
+    if (kScreenshotMode) {
+      const names = ['Mega Tree', 'Arches', 'Roofline', 'Window Frames',
+          'Spinner', 'Mini Trees', 'Star', 'Matrix'];
+      const pixels = [600, 300, 420, 240, 150, 200, 50, 1024];
+      return List.generate(
+        names.length,
+        (i) => ControllerOutput(
+          'Port ${i + 1} — ${names[i]}',
+          '${pixels[i]} px  •  U${i + 1}  •  GRB',
+        ),
+      );
+    }
     final out = <ControllerOutput>[];
     // Strings come in batches; loop until F==1 (final).
     var batch = 0;

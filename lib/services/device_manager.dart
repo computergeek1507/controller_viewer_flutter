@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/controller_vendor.dart';
 import '../models/fpp_device.dart';
+import '../screenshot_mode.dart';
 import 'controllers/controller_client.dart';
 import 'controllers/controller_factory.dart';
 import 'fpp_api.dart';
@@ -45,6 +46,88 @@ class DeviceManager extends ChangeNotifier {
   /// Whether this platform supports zero-config UDP/mDNS discovery. False on
   /// web, where only manual-IP add + HTTP polling are available.
   bool get supportsNetworkDiscovery => discovery.supportsNetworkDiscovery;
+
+  /// Populate the list with representative sample controllers for store
+  /// screenshots / demos. Skips all network discovery and polling. Gated by a
+  /// `--dart-define=SCREENSHOT=true` in [main]; never runs in normal use.
+  void loadDemoDevices() {
+    final now = DateTime.now();
+    final demo = <FppDevice>[
+      FppDevice(
+        ip: '192.168.1.21',
+        hostname: 'Front-Yard-Pi',
+        version: '8.4',
+        mode: 'player',
+        platform: 'Raspberry Pi 4',
+        typeId: 0x01,
+        vendor: ControllerVendor.fpp,
+        reachable: true,
+        statusName: 'playing',
+        currentPlaylist: 'Main Show',
+        currentSequence: 'Carol of the Bells',
+        secondsPlayed: 74,
+        secondsRemaining: 121,
+        volume: 85,
+        lastSeen: now,
+      ),
+      FppDevice(
+        ip: '192.168.1.22',
+        hostname: 'Mega-Tree-Pi',
+        version: '8.4',
+        mode: 'remote',
+        platform: 'Raspberry Pi 5',
+        typeId: 0x01,
+        vendor: ControllerVendor.fpp,
+        reachable: true,
+        statusName: 'testing',
+        lastSeen: now,
+      ),
+      FppDevice(
+        ip: '192.168.1.32',
+        hostname: 'Arches-Genius',
+        version: '1.4',
+        typeId: 0xA0,
+        vendor: ControllerVendor.genius,
+        reachable: true,
+        statusName: 'online',
+        portCount: 16,
+        lastSeen: now,
+      ),
+      FppDevice(
+        ip: '192.168.1.33',
+        hostname: 'Porch-WLED',
+        version: '0.14.0',
+        typeId: 0xFB,
+        vendor: ControllerVendor.wled,
+        reachable: true,
+        statusName: 'online',
+        portCount: 2,
+        lastSeen: now,
+      ),
+      FppDevice(
+        ip: '192.168.1.31',
+        hostname: 'Roofline-F48',
+        version: '4.10',
+        mode: 'E1.31 Bridge',
+        typeId: 0x88,
+        vendor: ControllerVendor.falconV4,
+        reachable: true,
+        statusName: 'testing',
+        inTestMode: true,
+        portCount: 48,
+        extra: const {
+          'Temp': '38°C',
+          'Voltage': '12.1 V',
+          'Uptime': '6h 12m',
+        },
+        lastSeen: now,
+      ),
+    ];
+    for (final d in demo) {
+      _devices[d.ip] = d;
+    }
+    notifyListeners();
+  }
 
   Future<void> init() async {
     _discoverySub = discovery.devices.listen(_onDeviceFound);
@@ -122,6 +205,8 @@ class DeviceManager extends ChangeNotifier {
   }
 
   Future<void> _refreshStatus(FppDevice d) async {
+    // Screenshot/demo build: keep the seeded sample data static.
+    if (kScreenshotMode) return;
     if (d.ip.isEmpty) return;
     // FPP players keep the rich playback status path; other vendors poll via
     // their controller client and map the normalized snapshot onto the device.
