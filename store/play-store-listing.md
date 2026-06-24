@@ -137,7 +137,7 @@ see `lib/screenshot_mode.dart`).
 - [x] Replace the debug signing config in `android/app/build.gradle.kts` with a
       real upload key. (Upload keystore generated; secrets in `android/key.properties`
       + `android/upload-keystore.jks`, both gitignored — **back these up**.)
-- [ ] Bump `version` in `pubspec.yaml` for each release (currently `1.0.0+1`).
+- [ ] Bump `version` in `pubspec.yaml` for each release (now `1.0.1+2`; was `1.0.0+1` for the first release).
 - [x] Build an app bundle: `flutter build appbundle --release`
       (→ `build/app/outputs/bundle/release/app-release.aab`, signed with upload key)
 - [ ] Upload `build/app/outputs/bundle/release/app-release.aab`
