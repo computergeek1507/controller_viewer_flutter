@@ -168,8 +168,10 @@ class _VendorBadge extends StatelessWidget {
     ControllerVendor.fpp: Color(0xFF1565C0),
     ControllerVendor.falconV3: Color(0xFF6A1B9A),
     ControllerVendor.falconV4: Color(0xFF8E24AA),
+    ControllerVendor.falconV5: Color(0xFFAB47BC),
     ControllerVendor.genius: Color(0xFF2E7D32),
     ControllerVendor.wled: Color(0xFFEF6C00),
+    ControllerVendor.espixelstick: Color(0xFF00838F),
     ControllerVendor.unknown: Color(0xFF546E7A),
   };
 

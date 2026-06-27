@@ -1,5 +1,5 @@
 /// The kinds of lighting controller this app can talk to.
-enum ControllerVendor { fpp, falconV3, falconV4, genius, wled, unknown }
+enum ControllerVendor { fpp, falconV3, falconV4, falconV5, genius, wled, espixelstick, unknown }
 
 extension ControllerVendorInfo on ControllerVendor {
   /// Short label for badges/UI.
@@ -11,10 +11,14 @@ extension ControllerVendorInfo on ControllerVendor {
         return 'Falcon V3';
       case ControllerVendor.falconV4:
         return 'Falcon V4';
+      case ControllerVendor.falconV5:
+        return 'Falcon V5';
       case ControllerVendor.genius:
         return 'Genius';
       case ControllerVendor.wled:
         return 'WLED';
+      case ControllerVendor.espixelstick:
+        return 'ESPixelStick';
       case ControllerVendor.unknown:
         return 'Unknown';
     }
@@ -24,7 +28,9 @@ extension ControllerVendorInfo on ControllerVendor {
   bool get isFppPlayer => this == ControllerVendor.fpp;
 
   bool get isFalcon =>
-      this == ControllerVendor.falconV3 || this == ControllerVendor.falconV4;
+      this == ControllerVendor.falconV3 ||
+      this == ControllerVendor.falconV4 ||
+      this == ControllerVendor.falconV5;
 }
 
 /// Classify a controller from the MultiSync ping `typeId` byte (data[9]).
@@ -33,13 +39,17 @@ extension ControllerVendorInfo on ControllerVendor {
 /// (controllerPlugin.cpp MakeController):
 ///   0x01–0x7F  -> FPP
 ///   0x85,0x87  -> Falcon V3
-///   0x88,0x89  -> Falcon V4 (and V5)
+///   0x88,0x89  -> Falcon V4
+///   0x8A–0x8C  -> Falcon V5 (same protocol as V4)
 ///   0xA0–0xAF  -> Genius
+///   0xC2,0xC3  -> ESPixelStick (ESP8266 / ESP32)
 ///   0xFB       -> WLED
 ControllerVendor vendorFromTypeId(int typeId) {
   if (typeId == 0x88 || typeId == 0x89) return ControllerVendor.falconV4;
+  if (typeId >= 0x8A && typeId <= 0x8C) return ControllerVendor.falconV5;
   if (typeId == 0x85 || typeId == 0x87) return ControllerVendor.falconV3;
   if (typeId >= 0xA0 && typeId <= 0xAF) return ControllerVendor.genius;
+  if (typeId == 0xC2 || typeId == 0xC3) return ControllerVendor.espixelstick;
   if (typeId == 0xFB) return ControllerVendor.wled;
   if (typeId > 0x00 && typeId < 0x80) return ControllerVendor.fpp;
   return ControllerVendor.unknown;
@@ -53,6 +63,7 @@ ControllerVendor vendorFromPlatform(String platform, {int typeId = 0}) {
     if (v != ControllerVendor.unknown) return v;
   }
   final p = platform.toLowerCase();
+  if (p.contains('espixelstick')) return ControllerVendor.espixelstick;
   if (p.contains('beaglebone') || p.contains('raspberry') || p.contains('fpp')) {
     return ControllerVendor.fpp;
   }

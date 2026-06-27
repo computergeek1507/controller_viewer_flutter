@@ -27,6 +27,15 @@ class FppApi {
     return body is Map<String, dynamic> ? body : null;
   }
 
+  /// Probe a host for WLED's JSON API (`/json/info`). Returns the info map only
+  /// if it has WLED's distinctive shape (a `leds` object), else null — so a
+  /// stray 200 from some other server isn't mistaken for WLED.
+  Future<Map<String, dynamic>?> wledInfo(String ip) async {
+    final body = await _getJson(_u(ip, '/json/info'));
+    if (body is Map<String, dynamic> && body['leds'] is Map) return body;
+    return null;
+  }
+
   /// Returns a status map, falling back to the legacy endpoint for old FPP.
   Future<Map<String, dynamic>?> systemStatus(String ip, {int majorVersion = 99}) async {
     if (majorVersion >= 5 || majorVersion < 0) {
@@ -134,6 +143,28 @@ class FppApi {
       'colorPattern': 'FF000000FF000000FF',
     });
     return _postOk(_u(ip, '/api/testmode'), payload);
+  }
+
+  /// Enable/disable test mode on [ip] and, when [multiSync] is set, on every
+  /// MultiSync peer this device knows about. FPP channel ranges are global, so
+  /// the same [channelSet] is meaningful across the show. Returns true if the
+  /// local device accepted the command (peers are best-effort, fired in
+  /// parallel). [excludeIp] avoids re-sending to the device itself, which FPP
+  /// lists among its own peers.
+  Future<bool> setTestModeMultiSync(String ip,
+      {required bool enabled, String channelSet = '1-1048576', bool multiSync = false}) async {
+    final ok = await setTestMode(ip, enabled: enabled, channelSet: channelSet);
+    if (multiSync) {
+      final peers = await multiSyncSystems(ip);
+      final addresses = peers
+          .map((p) => (p['address'] ?? p['ip'] ?? '').toString().trim())
+          .where((a) => a.isNotEmpty && a != ip)
+          .toSet();
+      await Future.wait(
+        addresses.map((a) => setTestMode(a, enabled: enabled, channelSet: channelSet)),
+      );
+    }
+    return ok;
   }
 
   /// Run a named FPP command via POST /api/command.

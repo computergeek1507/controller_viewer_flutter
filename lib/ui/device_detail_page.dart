@@ -19,6 +19,8 @@ class DeviceDetailPage extends StatefulWidget {
 class _DeviceDetailPageState extends State<DeviceDetailPage> {
   Timer? _poll;
   bool _busy = false;
+  // When set, test actions are also pushed to this device's MultiSync peers.
+  bool _multiSync = false;
 
   DeviceManager get manager => widget.manager;
   FppDevice get device => widget.device;
@@ -79,7 +81,7 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
                 runSpacing: 12,
                 children: [
                   FilledButton.icon(
-                    onPressed: _busy ? null : () => _run('Start test', () => manager.api.setTestMode(device.ip, enabled: true)),
+                    onPressed: _busy ? null : () => _run('Start test', () => manager.api.setTestModeMultiSync(device.ip, enabled: true, multiSync: _multiSync)),
                     icon: const Icon(Icons.flash_on),
                     label: const Text('Start Test'),
                   ),
@@ -89,11 +91,20 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
                     label: const Text('Test Model'),
                   ),
                   OutlinedButton.icon(
-                    onPressed: _busy ? null : () => _run('Stop test', () => manager.api.setTestMode(device.ip, enabled: false)),
+                    onPressed: _busy ? null : () => _run('Stop test', () => manager.api.setTestModeMultiSync(device.ip, enabled: false, multiSync: _multiSync)),
                     icon: const Icon(Icons.flash_off),
                     label: const Text('Stop Test'),
                   ),
                 ],
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                dense: true,
+                value: _multiSync,
+                onChanged: _busy ? null : (v) => setState(() => _multiSync = v ?? false),
+                title: const Text('Apply to MultiSync remotes'),
+                subtitle: const Text('Also send the test command to this device’s MultiSync peers.'),
               ),
               const SizedBox(height: 16),
               _SectionTitle('Sequence'),
@@ -220,7 +231,7 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
     final start = model['startChannel'] as int;
     final end = start + (model['channelCount'] as int);
     // Run the RGB-chase test over just this model's channel range (POC parity).
-    await _run('Test model', () => manager.api.setTestMode(device.ip, enabled: true, channelSet: '$start-$end'));
+    await _run('Test model', () => manager.api.setTestModeMultiSync(device.ip, enabled: true, channelSet: '$start-$end', multiSync: _multiSync));
   }
 
   Future<void> _openWebUi() async {

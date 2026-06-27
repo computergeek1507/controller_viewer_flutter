@@ -13,12 +13,18 @@ import 'controller_client.dart';
 class FalconV4Client extends ControllerClient {
   final http.Client _http;
   final Duration timeout;
+  final ControllerVendor _vendor;
 
-  FalconV4Client(super.ip, {http.Client? client, this.timeout = const Duration(seconds: 5)})
-      : _http = client ?? http.Client();
+  FalconV4Client(super.ip,
+      {http.Client? client,
+      this.timeout = const Duration(seconds: 5),
+      ControllerVendor vendor = ControllerVendor.falconV4})
+      : _http = client ?? http.Client(),
+        // ignore: prefer_initializing_formals -- named params can't be private formals
+        _vendor = vendor;
 
   @override
-  ControllerVendor get vendor => ControllerVendor.falconV4;
+  ControllerVendor get vendor => _vendor;
   @override
   bool get supportsPerPortTest => true;
   @override

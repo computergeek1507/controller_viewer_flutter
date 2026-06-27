@@ -17,7 +17,7 @@ class WledClient extends ControllerClient {
   @override
   ControllerVendor get vendor => ControllerVendor.wled;
   @override
-  bool get supportsOutputConfig => false;
+  bool get supportsOutputConfig => true;
 
   Future<dynamic> _get(String path) async {
     try {
@@ -63,6 +63,37 @@ class WledClient extends ControllerClient {
   }
 
   @override
+  Future<List<ControllerOutput>> fetchOutputs() async {
+    // WLED's physical pixel outputs (LED buses) live in /json/cfg under
+    // hw.led.ins[]; /json/info only reports aggregate LED count + segments.
+    final cfg = await _get('/json/cfg');
+    final hw = (cfg is Map && cfg['hw'] is Map) ? cfg['hw'] as Map : null;
+    final led = (hw?['led'] is Map) ? hw!['led'] as Map : null;
+    final ins = (led?['ins'] is List) ? led!['ins'] as List : const [];
+    final out = <ControllerOutput>[];
+    var idx = 0;
+    for (final b in ins.whereType<Map>()) {
+      idx++;
+      final len = _asInt(b['len']);
+      final start = _asInt(b['start']);
+      final pins = (b['pin'] is List)
+          ? (b['pin'] as List).map((p) => '$p').join('/')
+          : '${b['pin'] ?? ''}';
+      final parts = <String>[
+        '$len px',
+        if (pins.isNotEmpty) 'GPIO $pins',
+        _ledType(_asInt(b['type'])),
+        if (_colorOrder(_asInt(b['order'])).isNotEmpty) _colorOrder(_asInt(b['order'])),
+      ];
+      final detail = len > 0
+          ? '${parts.join('  •  ')}  (LED $start–${start + len - 1})'
+          : parts.join('  •  ');
+      out.add(ControllerOutput('Output $idx', detail));
+    }
+    return out;
+  }
+
+  @override
   Future<bool> testOn() async {
     final state = await _get('/json/state');
     final segCount = (state is Map && state['seg'] is List) ? (state['seg'] as List).length : 1;
@@ -74,4 +105,27 @@ class WledClient extends ControllerClient {
 
   @override
   Future<bool> testOff() => _postJson('/json', {'on': false});
+
+  static int _asInt(dynamic v) {
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? 0;
+    return 0;
+  }
+
+  /// Map WLED's bus LED-type code to a label (common types; others fall back).
+  static String _ledType(int t) {
+    const types = {
+      22: 'WS281x', 24: 'WS2811 400kHz', 30: 'SK6812 RGBW', 31: 'TM1814',
+      50: 'WS2801', 51: 'APA102', 52: 'LPD8806', 53: 'P9813', 54: 'LPD6803',
+      41: 'Analog 1ch', 42: 'Analog 2ch', 43: 'Analog 3ch',
+      44: 'Analog 4ch', 45: 'Analog 5ch',
+    };
+    return types[t] ?? 'Type $t';
+  }
+
+  static String _colorOrder(int o) {
+    const orders = ['GRB', 'RGB', 'BRG', 'RBG', 'BGR', 'GBR'];
+    return (o >= 0 && o < orders.length) ? orders[o] : '';
+  }
 }

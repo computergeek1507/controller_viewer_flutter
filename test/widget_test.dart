@@ -88,6 +88,24 @@ void main() {
       expect(d.isPlayer, isFalse);
     });
 
+    test('parses WLED /json/info into a wled device', () {
+      final d = FppDevice.fromWledInfo({
+        'ver': '0.14.4',
+        'name': 'Porch-WLED',
+        'arch': 'esp32',
+        'mac': '24dcc3c801d0',
+        'ip': '192.168.5.109',
+        'leds': {'count': 285},
+      }, source: 'http', ip: '192.168.5.109');
+      expect(d.vendor, ControllerVendor.wled);
+      expect(d.typeId, 0xFB);
+      expect(d.ip, '192.168.5.109');
+      expect(d.hostname, 'Porch-WLED');
+      expect(d.version, '0.14.4');
+      expect(d.reachable, isTrue);
+      expect(d.isFppDevice, isFalse);
+    });
+
     test('applyStatus reads playback fields', () {
       final d = FppDevice(ip: '192.168.1.50');
       d.applyStatus({
@@ -147,8 +165,13 @@ void main() {
       expect(vendorFromTypeId(0x87), ControllerVendor.falconV3);
       expect(vendorFromTypeId(0x88), ControllerVendor.falconV4);
       expect(vendorFromTypeId(0x89), ControllerVendor.falconV4);
+      expect(vendorFromTypeId(0x8A), ControllerVendor.falconV5);
+      expect(vendorFromTypeId(0x8B), ControllerVendor.falconV5);
+      expect(vendorFromTypeId(0x8C), ControllerVendor.falconV5);
       expect(vendorFromTypeId(0xA0), ControllerVendor.genius);
       expect(vendorFromTypeId(0xAF), ControllerVendor.genius);
+      expect(vendorFromTypeId(0xC2), ControllerVendor.espixelstick);
+      expect(vendorFromTypeId(0xC3), ControllerVendor.espixelstick);
       expect(vendorFromTypeId(0xFB), ControllerVendor.wled);
       expect(vendorFromTypeId(0x00), ControllerVendor.unknown);
       expect(vendorFromTypeId(0x90), ControllerVendor.unknown);
@@ -164,6 +187,7 @@ void main() {
     test('falls back to platform when typeId is absent', () {
       expect(vendorFromPlatform('Raspberry Pi 4'), ControllerVendor.fpp);
       expect(vendorFromPlatform('BeagleBone Black'), ControllerVendor.fpp);
+      expect(vendorFromPlatform('ESPixelStick'), ControllerVendor.espixelstick);
       expect(vendorFromPlatform('something else'), ControllerVendor.unknown);
     });
   });

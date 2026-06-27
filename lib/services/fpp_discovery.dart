@@ -123,14 +123,11 @@ class FppDiscovery {
     return String.fromCharCodes(bytes).trim();
   }
 
-  /// HTTP-enrich a known IP (system/info) and emit its MultiSync peers.
+  /// HTTP-enrich a known IP and, if it's a real FPP instance, emit its
+  /// MultiSync peers. Non-FPP controllers (e.g. WLED) have no peer list.
   Future<void> enrichAndPullPeers(String ip) async {
-    final info = await api.systemInfo(ip);
-    if (info != null) {
-      final d = FppDevice.fromSysInfo(info, source: 'http');
-      if (d.ip.isEmpty) d.ip = ip;
-      _controller.add(d);
-    }
+    final isFpp = await _httpProbe(ip, source: 'http');
+    if (!isFpp) return;
     final peers = await api.multiSyncSystems(ip);
     for (final p in peers) {
       final pd = FppDevice.fromSysInfo(p, source: 'peer');
@@ -145,13 +142,35 @@ class FppDiscovery {
     }
   }
 
-  Future<void> _enrichOnly(String ip) async {
+  Future<void> _enrichOnly(String ip) => _httpProbe(ip, source: 'http');
+
+  /// Probe one host over HTTP: FPP sysinfo first, then a WLED `/json/info`
+  /// fallback. Emits the identified device. Returns true only when the host is
+  /// a real FPP instance (so the caller knows whether to pull a peer list).
+  Future<bool> _httpProbe(String ip, {required String source}) async {
     final info = await api.systemInfo(ip);
-    if (info != null) {
-      final d = FppDevice.fromSysInfo(info, source: 'http');
+    if (info != null && _looksLikeFpp(info)) {
+      final d = FppDevice.fromSysInfo(info, source: source);
       if (d.ip.isEmpty) d.ip = ip;
       _controller.add(d);
+      return true;
     }
+    final wled = await api.wledInfo(ip);
+    if (wled != null) {
+      _controller.add(FppDevice.fromWledInfo(wled, source: source, ip: ip));
+    }
+    return false;
+  }
+
+  /// WLED answers `/api/system/info` with an empty `{}` (its catch-all JSON
+  /// handler), so a 200 alone isn't enough — require a real FPP identity key
+  /// before treating the host as FPP.
+  static bool _looksLikeFpp(Map<String, dynamic> info) {
+    const fppKeys = {
+      'HostName', 'hostname', 'Version', 'version', 'typeId', 'Platform',
+      'Utilization', 'fppModeString', 'Mode',
+    };
+    return info.keys.any(fppKeys.contains);
   }
 
   /// Manually add a host by IP/hostname: ping it (native) and probe over HTTP.

@@ -5,6 +5,7 @@ import '../../models/fpp_device.dart';
 import '../fpp_api.dart';
 import 'controller_client.dart';
 import 'falcon_v3_client.dart';
+import 'espixelstick_client.dart';
 import 'falcon_v4_client.dart';
 import 'fpp_controller_client.dart';
 import 'genius_client.dart';
@@ -23,12 +24,16 @@ ControllerClient? controllerClientFor(
           api: fppApi, majorVersion: device.majorVersion, platform: device.platform);
     case ControllerVendor.falconV4:
       return FalconV4Client(device.ip, client: httpClient);
+    case ControllerVendor.falconV5:
+      return FalconV4Client(device.ip, client: httpClient, vendor: ControllerVendor.falconV5);
     case ControllerVendor.falconV3:
       return FalconV3Client(device.ip, client: httpClient);
     case ControllerVendor.genius:
       return GeniusClient(device.ip, client: httpClient);
     case ControllerVendor.wled:
       return WledClient(device.ip, client: httpClient);
+    case ControllerVendor.espixelstick:
+      return EspixelstickClient(device.ip, client: httpClient);
     case ControllerVendor.unknown:
       return null;
   }

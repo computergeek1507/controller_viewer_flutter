@@ -143,6 +143,23 @@ class FppDevice {
     return d;
   }
 
+  /// Build from WLED's `/json/info` JSON. WLED exposes no FPP sysinfo endpoint,
+  /// so it is identified by this distinct shape (`ver` + `leds`) during HTTP
+  /// enrichment rather than the MultiSync typeId. [ip] is the probed host,
+  /// used when the payload omits its own address.
+  factory FppDevice.fromWledInfo(Map<String, dynamic> json, {String source = '', String ip = ''}) {
+    final d = FppDevice(discoverySource: source);
+    final addr = _firstString(json, ['ip']);
+    d.ip = addr.isNotEmpty ? addr : ip;
+    d.hostname = _firstString(json, ['name']);
+    d.version = _firstString(json, ['ver']);
+    d.platform = _firstString(json, ['arch']);
+    d.vendor = ControllerVendor.wled;
+    d.typeId = 0xFB;
+    d.reachable = true;
+    return d;
+  }
+
   /// Apply `/api/system/status` JSON onto this device.
   void applyStatus(Map<String, dynamic> json) {
     statusName = _firstString(json, ['status_name']);

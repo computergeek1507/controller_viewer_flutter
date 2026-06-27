@@ -89,30 +89,32 @@ class _ControllerDetailPageState extends State<ControllerDetailPage> {
                   child: Text('No control client available for this controller type.'),
                 )
               else ...[
-                const SizedBox(height: 16),
-                _SectionTitle('Testing'),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    FilledButton.icon(
-                      onPressed: _busy ? null : () => _run('Start test', client.testOn),
-                      icon: const Icon(Icons.flash_on),
-                      label: const Text('Start Test'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _busy ? null : () => _run('Stop test', client.testOff),
-                      icon: const Icon(Icons.flash_off),
-                      label: const Text('Stop Test'),
-                    ),
-                    if (client.supportsPerPortTest)
-                      OutlinedButton.icon(
-                        onPressed: _busy ? null : _testPort,
-                        icon: const Icon(Icons.linear_scale),
-                        label: const Text('Test Port'),
+                if (client.supportsTestMode) ...[
+                  const SizedBox(height: 16),
+                  _SectionTitle('Testing'),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: _busy ? null : () => _run('Start test', client.testOn),
+                        icon: const Icon(Icons.flash_on),
+                        label: const Text('Start Test'),
                       ),
-                  ],
-                ),
+                      OutlinedButton.icon(
+                        onPressed: _busy ? null : () => _run('Stop test', client.testOff),
+                        icon: const Icon(Icons.flash_off),
+                        label: const Text('Stop Test'),
+                      ),
+                      if (client.supportsPerPortTest)
+                        OutlinedButton.icon(
+                          onPressed: _busy ? null : _testPort,
+                          icon: const Icon(Icons.linear_scale),
+                          label: const Text('Test Port'),
+                        ),
+                    ],
+                  ),
+                ],
                 if (client.supportsOutputConfig) ...[
                   const SizedBox(height: 16),
                   _SectionTitle('Outputs'),
