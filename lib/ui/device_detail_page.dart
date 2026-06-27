@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/fpp_device.dart';
+import '../models/fpp_output.dart';
 import '../services/device_manager.dart';
-import 'outputs_page.dart';
 
 class DeviceDetailPage extends StatefulWidget {
   final DeviceManager manager;
@@ -21,6 +21,8 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
   bool _busy = false;
   // When set, test actions are also pushed to this device's MultiSync peers.
   bool _multiSync = false;
+  Map<String, dynamic>? _cape;
+  List<FppOutput>? _outputs;
 
   DeviceManager get manager => widget.manager;
   FppDevice get device => widget.device;
@@ -29,7 +31,23 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
   void initState() {
     super.initState();
     manager.refreshOne(device);
+    _loadCape();
+    _loadOutputs();
     _poll = Timer.periodic(const Duration(seconds: 3), (_) => manager.refreshOne(device));
+  }
+
+  Future<void> _loadCape() async {
+    final cape = await manager.api.capeInfo(device.ip);
+    if (mounted) setState(() => _cape = cape);
+  }
+
+  Future<void> _loadOutputs() async {
+    final docs = await manager.api.channelOutputDocs(device.ip, platform: device.platform);
+    final all = <FppOutput>[];
+    for (final doc in docs) {
+      all.addAll(FppOutput.parseDocument(doc));
+    }
+    if (mounted) setState(() => _outputs = all);
   }
 
   @override
@@ -61,7 +79,7 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
         title: Text(title),
         actions: [
           IconButton(
-            icon: const Icon(Icons.open_in_browser),
+            icon: const Icon(Icons.open_in_new),
             tooltip: 'Open web UI in browser',
             onPressed: () => _openWebUi(),
           ),
@@ -152,28 +170,14 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
                   ),
                 ],
               ),
+              if (_hasCape) ...[
+                const SizedBox(height: 16),
+                _SectionTitle('Cape'),
+                _CapeCard(cape: _cape!),
+              ],
               const SizedBox(height: 16),
-              _SectionTitle('Device'),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  FilledButton.tonalIcon(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => OutputsPage(api: manager.api, device: device),
-                      ),
-                    ),
-                    icon: const Icon(Icons.cable),
-                    label: const Text('View Outputs'),
-                  ),
-                  FilledButton.tonalIcon(
-                    onPressed: _openWebUi,
-                    icon: const Icon(Icons.open_in_browser),
-                    label: const Text('Open Web UI'),
-                  ),
-                ],
-              ),
+              _SectionTitle('Outputs'),
+              _FppOutputsList(outputs: _outputs, onRefresh: _loadOutputs),
               if (_busy) ...[
                 const SizedBox(height: 24),
                 const Center(child: CircularProgressIndicator()),
@@ -272,6 +276,15 @@ class _DeviceDetailPageState extends State<DeviceDetailPage> {
   void _toast(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
+
+  /// True when the device reported a real cape (not absent/"unknown").
+  bool get _hasCape {
+    final c = _cape;
+    if (c == null) return false;
+    final name = (c['name'] ?? '').toString().trim();
+    final lower = name.toLowerCase();
+    return name.isNotEmpty && lower != 'unknown' && !lower.contains('no cape');
+  }
 }
 
 class _InfoCard extends StatelessWidget {
@@ -331,6 +344,98 @@ class _InfoCard extends StatelessWidget {
     final m = seconds ~/ 60;
     final s = seconds % 60;
     return '$m:${s.toString().padLeft(2, '0')}';
+  }
+}
+
+class _FppOutputsList extends StatelessWidget {
+  final List<FppOutput>? outputs;
+  final Future<void> Function() onRefresh;
+  const _FppOutputsList({required this.outputs, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    if (outputs == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Text('Loading outputs…'),
+      );
+    }
+    if (outputs!.isEmpty) {
+      return Row(
+        children: [
+          const Text('No channel outputs reported.'),
+          const Spacer(),
+          TextButton(onPressed: onRefresh, child: const Text('Retry')),
+        ],
+      );
+    }
+    return Card(
+      child: Column(
+        children: [
+          for (final o in outputs!)
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.cable, size: 20),
+              title: Text(o.portLabel),
+              subtitle: Text(o.detail),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CapeCard extends StatelessWidget {
+  final Map<String, dynamic> cape;
+  const _CapeCard({required this.cape});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    String s(String k) => (cape[k] ?? '').toString().trim();
+    final vendor = cape['vendor'];
+    final vendorName = (vendor is Map ? (vendor['name'] ?? '') : '').toString().trim();
+    final provides = cape['provides'];
+    final providesStr =
+        (provides is List) ? provides.map((e) => e.toString()).where((e) => e.isNotEmpty).join(', ') : '';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _kv('Name', s('name'), theme, emphasize: true),
+            if (s('description').isNotEmpty && s('description') != s('name'))
+              _kv('Description', s('description'), theme),
+            if (s('version').isNotEmpty) _kv('Version', s('version'), theme),
+            if (s('serialNumber').isNotEmpty) _kv('Serial', s('serialNumber'), theme),
+            if (s('designer').isNotEmpty) _kv('Designer', s('designer'), theme),
+            if (vendorName.isNotEmpty) _kv('Vendor', vendorName, theme),
+            if (providesStr.isNotEmpty) _kv('Provides', providesStr, theme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _kv(String k, String v, ThemeData theme, {bool emphasize = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 92, child: Text(k, style: theme.textTheme.labelMedium)),
+          Expanded(
+            child: Text(
+              v,
+              style: emphasize
+                  ? theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary)
+                  : theme.textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -41,19 +41,58 @@ class FppOutput {
 
   static FppOutput _pixel(Map<String, dynamic> json) {
     final portNumber = _int(json['portNumber'], -1);
-    final descriptions = <String>[];
+    final lines = <String>[];
     for (var i = 0; i < 6; i++) {
       final key = i == 0 ? 'virtualStrings' : 'virtualStrings$i';
       final vs = json[key];
       if (vs is! List) break;
       for (final s in vs.whereType<Map>()) {
-        final desc = (s['description'] ?? '').toString();
-        final remote = (s['smartRemote'] ?? '').toString();
-        descriptions.add(remote.isNotEmpty ? '$desc:$remote' : desc);
+        final line = _virtualString(s.cast<String, dynamic>());
+        if (line.isNotEmpty) lines.add(line);
       }
     }
-    final detail = descriptions.where((d) => d.isNotEmpty).join(', ');
+    final detail = lines.join('\n');
     return FppOutput('Pixel Port ${portNumber + 1}', detail.isEmpty ? '(empty)' : detail);
+  }
+
+  /// Format one virtual string's wiring config into a single line.
+  static String _virtualString(Map<String, dynamic> s) {
+    final desc = (s['description'] ?? '').toString();
+    final remoteTag = _remoteTag(s['smartRemote']);
+    final label = [if (remoteTag.isNotEmpty) remoteTag, if (desc.isNotEmpty) desc].join(' ');
+
+    final pixels = _int(s['pixelCount'], 0);
+    final order = (s['colorOrder'] ?? '').toString();
+    final start = _int(s['startChannel'], -1);
+    final group = _int(s['groupCount'], 0);
+    final startNulls = _int(s['nullNodes'], 0);
+    final endNulls = _int(s['endNulls'], 0);
+    final zig = _int(s['zigZag'], 0);
+    final reverse = _int(s['reverse'], 0);
+    final bri = _int(s['brightness'], -1);
+    final gamma = (s['gamma'] ?? '').toString();
+
+    final parts = <String>[];
+    if (pixels > 0) parts.add('$pixels px');
+    if (order.isNotEmpty) parts.add(order);
+    if (start >= 0) parts.add('ch $start');
+    if (group > 1) parts.add('group $group');
+    if (startNulls > 0 || endNulls > 0) parts.add('null $startNulls/$endNulls');
+    if (zig > 0) parts.add('zigzag $zig');
+    if (reverse != 0) parts.add('reversed');
+    if (bri >= 0 && bri != 100) parts.add('$bri%');
+    if (gamma.isNotEmpty && gamma != '1.0') parts.add('γ$gamma');
+
+    if (label.isEmpty && parts.isEmpty) return '';
+    if (parts.isEmpty) return label;
+    return label.isEmpty ? parts.join(' • ') : '$label — ${parts.join(' • ')}';
+  }
+
+  /// FPP smart-receiver index (1->A, 2->B, ...) or '' when not on a receiver.
+  static String _remoteTag(dynamic v) {
+    final n = _int(v, 0);
+    if (n <= 0) return '';
+    return String.fromCharCode(0x40 + n.clamp(1, 26)); // 1 -> 'A'
   }
 
   static FppOutput _serial(Map<String, dynamic> json) {

@@ -27,6 +27,13 @@ class FppApi {
     return body is Map<String, dynamic> ? body : null;
   }
 
+  /// Cape/hat EEPROM info (`/api/cape`) for BeagleBone/Pi capes. Returns null
+  /// when the device has no cape or doesn't support the endpoint.
+  Future<Map<String, dynamic>?> capeInfo(String ip) async {
+    final body = await _getJson(_u(ip, '/api/cape'));
+    return body is Map<String, dynamic> ? body : null;
+  }
+
   /// Probe a host for WLED's JSON API (`/json/info`). Returns the info map only
   /// if it has WLED's distinctive shape (a `leds` object), else null — so a
   /// stray 200 from some other server isn't mistaken for WLED.

@@ -70,7 +70,7 @@ class _ControllerDetailPageState extends State<ControllerDetailPage> {
         title: Text('$title  •  ${device.vendor.label}'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.open_in_browser),
+            icon: const Icon(Icons.open_in_new),
             tooltip: 'Open web UI',
             onPressed: _openWebUi,
           ),

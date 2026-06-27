@@ -94,10 +94,29 @@ class EspixelstickClient extends ControllerClient {
       final name = (driver['type'] ?? 'Disabled').toString();
       final pixels = _asInt(driver['pixel_count']);
       final chans = _asInt(driver['num_chan']);
+      final order = (driver['color_order'] ?? '').toString().toUpperCase();
+      final pin = driver.containsKey('data_pin') ? _asInt(driver['data_pin']) : -1;
+      final group = _asInt(driver['group_size']);
+      final zig = _asInt(driver['zig_size']);
+      final prepend = _asInt(driver['prependnullcount']);
+      final append = _asInt(driver['appendnullcount']);
+      final brightness = _asInt(driver['brightness']);
+
+      final parts = <String>[];
+      if (pixels > 0) {
+        parts.add('$pixels px');
+      } else if (chans > 0) {
+        parts.add('$chans ch');
+      }
+      if (order.isNotEmpty) parts.add(order);
+      if (pin >= 0) parts.add('GPIO $pin');
+      if (group > 1) parts.add('group $group');
+      if (zig > 0) parts.add('zigzag $zig');
+      if (prepend > 0 || append > 0) parts.add('null $prepend/$append');
+      if (brightness > 0 && brightness != 100) parts.add('$brightness%');
+
       final port = (int.tryParse(key) ?? 0) + 1;
-      final detail = pixels > 0
-          ? '$name  •  $pixels px'
-          : (chans > 0 ? '$name  •  $chans ch' : name);
+      final detail = parts.isEmpty ? name : '$name  •  ${parts.join('  •  ')}';
       out.add(ControllerOutput('Port $port', detail));
     }
     return out;
