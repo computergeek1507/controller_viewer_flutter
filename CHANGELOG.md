@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format is loosely
 based on [Keep a Changelog](https://keepachangelog.com/), and the project
 follows semantic-ish versioning (`major.minor.patch+build`).
 
+## [1.2.0+5]
+
+### Fixed
+- **Edge-to-edge (Android 15)** — opt into `SystemUiMode.edgeToEdge` with
+  transparent system bars and inset-aware bottom padding on the detail pages,
+  clearing the Play Console "edge-to-edge may not display for all users"
+  warning.
+
 ## [1.2.0+4]
 
 ### Added

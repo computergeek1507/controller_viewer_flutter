@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'screenshot_mode.dart';
 import 'services/device_manager.dart';
 import 'ui/device_list_page.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Android 15 (API 35) enforces edge-to-edge. Opt in explicitly and make the
+  // system bars transparent so the UI draws behind them — this clears the Play
+  // Console "edge-to-edge may not display for all users" warning.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarContrastEnforced: false,
+  ));
   runApp(const FppControlApp());
 }
 
