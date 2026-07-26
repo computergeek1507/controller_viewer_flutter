@@ -72,5 +72,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Controller Viewer discovers and communicates with Falcon Player (FPP) and other lighting controllers on your local network.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_fppd._udp</string>
+	</array>
 </dict>
 </plist>
