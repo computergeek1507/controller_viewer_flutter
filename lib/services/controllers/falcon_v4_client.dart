@@ -60,10 +60,16 @@ class FalconV4Client extends ControllerClient {
     void add(String key, String label, {String suffix = ''}) {
       if (p[key] != null) extra[label] = '${p[key]}$suffix';
     }
-    add('U', 'Uptime', suffix: 's');
+    if (p['U'] != null) extra['Uptime'] = _formatUptime(_asInt(p['U']));
     add('C', 'MAC');
-    if (p['T1'] != null) extra['Temp'] = '${p['T1']}';
-    if (p['V1'] != null) extra['Voltage'] = '${p['V1']}';
+    // T1/T2/V1/V2 are reported in tenths (e.g. 337 -> 33.7C, 117 -> 11.7V).
+    if (p['T1'] != null) extra['Temp'] = '${(_asInt(p['T1']) / 10).toStringAsFixed(1)}°C';
+    if (p['T2'] != null) extra['Temp 2'] = '${(_asInt(p['T2']) / 10).toStringAsFixed(1)}°C';
+    if (p['V1'] != null) extra['Voltage'] = '${(_asInt(p['V1']) / 10).toStringAsFixed(1)} V';
+    // F48 boards have a single voltage rail; V2 isn't meaningful there.
+    if (p['V2'] != null && _asInt(p['BR']) != 48) {
+      extra['Voltage 2'] = '${(_asInt(p['V2']) / 10).toStringAsFixed(1)} V';
+    }
     return ControllerStatus(
       reachable: true,
       inTestMode: test,
@@ -205,5 +211,14 @@ class FalconV4Client extends ControllerClient {
     if (v is num) return v.toInt();
     if (v is String) return int.tryParse(v) ?? 0;
     return 0;
+  }
+
+  static String _formatUptime(int seconds) {
+    final d = seconds ~/ 86400;
+    final h = (seconds % 86400) ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    if (d > 0) return '${d}d ${h}h ${m}m';
+    if (h > 0) return '${h}h ${m}m';
+    return '${m}m';
   }
 }
