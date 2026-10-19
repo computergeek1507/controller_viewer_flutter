@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format is loosely
 based on [Keep a Changelog](https://keepachangelog.com/), and the project
 follows semantic-ish versioning (`major.minor.patch+build`).
 
+## [1.2.1+6]
+
+### Fixed
+- **FPP smart-receiver outputs** — a port split across a smart-receiver chain
+  (e.g. "2 Smart Receivers") was silently dropping every leg past the first;
+  the parser looked for `virtualStrings1`/`virtualStrings2` but FPP actually
+  reports `virtualStringsB`/`virtualStringsC`. Legs are now read correctly and
+  lettered A–F.
+- **Falcon V4/V3 string outputs** — each receiver leg and each chained model
+  on a port was listed as its own duplicate "Port N" row instead of being
+  grouped under one row per physical port, so smart-receiver chains (A–F)
+  looked like repeated, unlabeled entries. Falcon V3's XML output got the
+  same per-port grouping (receiver-leg lettering is best-effort there,
+  unverified against real V3 hardware).
+- **Genius long-range outputs** — chained models on a long-range pixel port
+  were collapsed into a vague "N string(s)" summary, and the channel-count
+  math (`ec` was treated as an end channel, not a pixel count) produced
+  garbage whenever a string's start channel was past its `ec` value. Now
+  each model is listed individually with its real pixel count, grouped by
+  physical long-range port with its configured receiver count shown.
+
 ## [1.2.0+5]
 
 ### Fixed

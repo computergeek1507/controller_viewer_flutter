@@ -39,15 +39,29 @@ class FppOutput {
     return out;
   }
 
+  /// A differential/smart-receiver port splits its model chain across
+  /// sibling keys 'virtualStrings', 'virtualStringsB', 'virtualStringsC', ...
+  /// (one per receiver leg, up to 6 receivers A-F), each itself a list of
+  /// models (virtual strings) chained on that leg. A plain port just has
+  /// 'virtualStrings'.
+  static const _legSuffixes = ['', 'B', 'C', 'D', 'E', 'F'];
+
   static FppOutput _pixel(Map<String, dynamic> json) {
     final portNumber = _int(json['portNumber'], -1);
-    final lines = <String>[];
-    for (var i = 0; i < 6; i++) {
-      final key = i == 0 ? 'virtualStrings' : 'virtualStrings$i';
+    final legs = <String, List<Map<String, dynamic>>>{};
+    for (final suf in _legSuffixes) {
+      final key = suf.isEmpty ? 'virtualStrings' : 'virtualStrings$suf';
       final vs = json[key];
-      if (vs is! List) break;
-      for (final s in vs.whereType<Map>()) {
-        final line = _virtualString(s.cast<String, dynamic>());
+      if (vs is! List) continue;
+      final models = vs.whereType<Map>().map((m) => m.cast<String, dynamic>()).toList();
+      if (models.isNotEmpty) legs[suf] = models;
+    }
+    final multiLeg = legs.length > 1;
+    final lines = <String>[];
+    for (final entry in legs.entries) {
+      final legTag = multiLeg ? (entry.key.isEmpty ? 'A' : entry.key) : '';
+      for (final s in entry.value) {
+        final line = _virtualString(s, legTag);
         if (line.isNotEmpty) lines.add(line);
       }
     }
@@ -56,10 +70,13 @@ class FppOutput {
   }
 
   /// Format one virtual string's wiring config into a single line.
-  static String _virtualString(Map<String, dynamic> s) {
+  /// [legTag] is the smart-receiver leg letter ('A', 'B', ...) when this
+  /// port is split across multiple receiver legs, else empty.
+  static String _virtualString(Map<String, dynamic> s, [String legTag = '']) {
     final desc = (s['description'] ?? '').toString();
     final remoteTag = _remoteTag(s['smartRemote']);
-    final label = [if (remoteTag.isNotEmpty) remoteTag, if (desc.isNotEmpty) desc].join(' ');
+    final tag = [if (legTag.isNotEmpty) legTag, if (remoteTag.isNotEmpty) remoteTag].join(' ');
+    final label = [if (tag.isNotEmpty) tag, if (desc.isNotEmpty) desc].join(' ');
 
     final pixels = _int(s['pixelCount'], 0);
     final order = (s['colorOrder'] ?? '').toString();

@@ -84,7 +84,12 @@ class FalconV3Client extends ControllerClient {
   Future<List<ControllerOutput>> fetchOutputs() async {
     final xml = await _get('/strings.xml');
     if (xml == null) return const [];
-    final out = <ControllerOutput>[];
+    // Group <vs> tags sharing a port into one row (a smart-receiver chain
+    // reports one <vs> per leg; a plain port with chained models reports
+    // one per model). 'r' (receiver leg, mirroring the V4 JSON API's field
+    // of the same name) is read defensively since it isn't confirmed on V3
+    // firmware — absent, it's simply never shown.
+    final byPort = <int, List<String>>{};
     for (final m in RegExp(r'<vs\b([^>]*)/?>').allMatches(xml)) {
       final attrs = m.group(1) ?? '';
       String a(String k) {
@@ -93,14 +98,19 @@ class FalconV3Client extends ControllerClient {
         return mm?.group(1) ?? '';
       }
 
-      final port = (int.tryParse(a('p')) ?? 0) + 1;
+      final port = int.tryParse(a('p')) ?? 0;
       final pixels = a('c');
       final uni = a('u');
       final desc = a('y');
-      out.add(ControllerOutput(
-        'Port $port${desc.isNotEmpty ? ' — $desc' : ''}',
-        '$pixels px${uni.isNotEmpty ? '  •  U$uni' : ''}',
-      ));
+      final leg = int.tryParse(a('r')) ?? 0;
+      final tag = leg > 0 ? String.fromCharCode(0x40 + leg.clamp(1, 26)) : '';
+      final label = [if (tag.isNotEmpty) tag, if (desc.isNotEmpty) desc].join(' ');
+      final parts = ['$pixels px', if (uni.isNotEmpty) 'U$uni'];
+      (byPort[port] ??= []).add(label.isEmpty ? parts.join('  •  ') : '$label — ${parts.join('  •  ')}');
+    }
+    final out = <ControllerOutput>[];
+    for (final port in byPort.keys.toList()..sort()) {
+      out.add(ControllerOutput('Port ${port + 1}', byPort[port]!.join('\n')));
     }
     return out;
   }

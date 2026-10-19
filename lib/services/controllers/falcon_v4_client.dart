@@ -118,8 +118,8 @@ class FalconV4Client extends ControllerClient {
         ),
       );
     }
-    final out = <ControllerOutput>[];
     // Strings come in batches; loop until F==1 (final).
+    final raw = <Map<String, dynamic>>[];
     var batch = 0;
     var guard = 0;
     while (guard++ < 32) {
@@ -127,18 +127,42 @@ class FalconV4Client extends ControllerClient {
       if (res == null) break;
       final p = (res['P'] is Map) ? res['P'] as Map : const {};
       final arr = (p['A'] is List) ? p['A'] as List : const [];
-      for (final s in arr.whereType<Map>()) {
-        final port = _asInt(s['p']) + 1;
-        final pixels = _asInt(s['n']);
-        final uni = _asInt(s['u']);
-        final name = (s['nm'] ?? '').toString();
-        out.add(ControllerOutput(
-          'Port $port${name.isNotEmpty ? ' — $name' : ''}',
-          '$pixels px${uni > 0 ? '  •  U$uni' : ''}  •  ${_colourOrder(_asInt(s['o']))}',
-        ));
-      }
+      raw.addAll(arr.whereType<Map>().map((s) => s.cast<String, dynamic>()));
       if (_asInt(res['F']) == 1 || arr.isEmpty) break;
       batch++;
+    }
+    return _groupStrings(raw);
+  }
+
+  /// Groups the flat per-leg entries the `SP` query returns into one row per
+  /// physical port. A port driving a smart-receiver chain reports one entry
+  /// per receiver leg (`r`: 0 = direct/no receiver, 1/2/3... = 1st/2nd/3rd
+  /// receiver down the chain, lettered A/B/C below); multiple models queued
+  /// on the same leg share `r` and are ordered by `v`.
+  List<ControllerOutput> _groupStrings(List<Map<String, dynamic>> raw) {
+    final byPort = <int, Map<int, List<Map<String, dynamic>>>>{};
+    for (final s in raw) {
+      final port = _asInt(s['p']);
+      final leg = _asInt(s['r']);
+      (byPort[port] ??= {}).putIfAbsent(leg, () => []).add(s);
+    }
+    final out = <ControllerOutput>[];
+    for (final port in byPort.keys.toList()..sort()) {
+      final legs = byPort[port]!;
+      final lines = <String>[];
+      for (final leg in legs.keys.toList()..sort()) {
+        final tag = leg > 0 ? String.fromCharCode(0x40 + leg.clamp(1, 26)) : '';
+        final models = legs[leg]!..sort((a, b) => _asInt(a['v']).compareTo(_asInt(b['v'])));
+        for (final s in models) {
+          final pixels = _asInt(s['n']);
+          final uni = _asInt(s['u']);
+          final name = (s['nm'] ?? '').toString();
+          final label = [if (tag.isNotEmpty) tag, if (name.isNotEmpty) name].join(' ');
+          final parts = ['$pixels px', if (uni > 0) 'U$uni', _colourOrder(_asInt(s['o']))];
+          lines.add(label.isEmpty ? parts.join('  •  ') : '$label — ${parts.join('  •  ')}');
+        }
+      }
+      out.add(ControllerOutput('Port ${port + 1}', lines.join('\n')));
     }
     return out;
   }
